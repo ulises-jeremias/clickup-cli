@@ -2,11 +2,11 @@ package doc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/triptechtravel/clickup-cli/internal/apiv3"
 	"github.com/triptechtravel/clickup-cli/pkg/cmdutil"
 )
 
@@ -83,36 +83,24 @@ func runPageCreate(f *cmdutil.Factory, opts *pageCreateOptions) error {
 		return err
 	}
 
-	body := map[string]interface{}{
-		"name": opts.name,
-	}
+	req := &apiv3.CreatePagePublicRequest{Name: opts.name}
 	if opts.parentPageID != "" {
-		body["parent_page_id"] = opts.parentPageID
+		req.ParentPageID = opts.parentPageID
 	}
 	if opts.subTitle != "" {
-		body["sub_title"] = opts.subTitle
+		req.SubTitle = opts.subTitle
 	}
 	if opts.content != "" {
-		body["content"] = opts.content
+		req.Content = opts.content
 	}
 	if opts.contentFormat != "" {
-		body["content_format"] = opts.contentFormat
+		req.ContentFormat = opts.contentFormat
 	}
-
-	url := fmt.Sprintf("%s/workspaces/%s/docs/%s/pages", apiBase, workspaceID, opts.docID)
 
 	ctx := context.Background()
-	data, status, err := doRequest(ctx, client, "POST", url, body)
+	p, err := apiv3.CreatePagePublic(ctx, client, workspaceID, opts.docID, req)
 	if err != nil {
 		return fmt.Errorf("failed to create page: %w", err)
-	}
-	if status != 200 && status != 201 {
-		return fmt.Errorf("failed to create page: status %d: %s", status, string(data))
-	}
-
-	var p pageDetail
-	if err := json.Unmarshal(data, &p); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
 	}
 
 	if opts.jsonFlags.WantsJSON() {

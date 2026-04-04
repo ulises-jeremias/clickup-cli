@@ -2,11 +2,11 @@ package doc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/triptechtravel/clickup-cli/internal/apiv3"
 	"github.com/triptechtravel/clickup-cli/pkg/cmdutil"
 )
 
@@ -54,30 +54,20 @@ func runView(f *cmdutil.Factory, opts *viewOptions) error {
 		return err
 	}
 
-	url := fmt.Sprintf("%s/workspaces/%s/docs/%s", apiBase, workspaceID, opts.docID)
-
 	ctx := context.Background()
-	data, status, err := doRequest(ctx, client, "GET", url, nil)
+	d, err := apiv3.GetDocPublic(ctx, client, workspaceID, opts.docID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch doc: %w", err)
-	}
-	if status != 200 {
-		return fmt.Errorf("failed to fetch doc: status %d: %s", status, string(data))
-	}
-
-	var d docCore
-	if err := json.Unmarshal(data, &d); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
 	}
 
 	if opts.jsonFlags.WantsJSON() {
 		return opts.jsonFlags.OutputJSON(ios.Out, d)
 	}
 
-	return printDocView(f, &d)
+	return printDocView(f, d)
 }
 
-func printDocView(f *cmdutil.Factory, d *docCore) error {
+func printDocView(f *cmdutil.Factory, d *apiv3.DocCore) error {
 	ios := f.IOStreams
 	cs := ios.ColorScheme()
 	out := ios.Out
@@ -100,10 +90,10 @@ func printDocView(f *cmdutil.Factory, d *docCore) error {
 	}
 
 	if d.DateCreated != "" {
-		fmt.Fprintf(out, "%s %s\n", cs.Bold("Created:"), d.DateCreated)
+		fmt.Fprintf(out, "%s %s\n", cs.Bold("Created:"), formatDocTimestamp(d.DateCreated))
 	}
 	if d.DateUpdated != "" {
-		fmt.Fprintf(out, "%s %s\n", cs.Bold("Updated:"), d.DateUpdated)
+		fmt.Fprintf(out, "%s %s\n", cs.Bold("Updated:"), formatDocTimestamp(d.DateUpdated))
 	}
 
 	fmt.Fprintln(out)

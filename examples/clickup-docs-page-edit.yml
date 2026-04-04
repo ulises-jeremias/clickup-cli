@@ -29,8 +29,21 @@ jobs:
         run: echo "${{ secrets.CLICKUP_TOKEN }}" | clickup auth login --with-token
 
       - name: Append release entry to Doc page
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
         run: |
-          CONTENT="## ${{ github.event.release.tag_name }} — $(date -u '+%Y-%m-%d')\n\n${{ github.event.release.body }}\n\n[View release on GitHub](${{ github.event.release.html_url }})"
+          CONTENT="$(python3 - <<'PY'
+          import os
+          import datetime
+          tag = os.environ["RELEASE_TAG"]
+          body = os.environ["RELEASE_BODY"]
+          url = os.environ["RELEASE_URL"]
+          date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+          print(f"## {tag} — {date}\n\n{body}\n\n[View release on GitHub]({url})")
+          PY
+          )"
           clickup doc page edit \
             "${{ vars.CLICKUP_DOC_ID }}" \
             "${{ vars.CLICKUP_PAGE_ID }}" \

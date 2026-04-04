@@ -22,6 +22,14 @@ func TestNewCmdList_Flags(t *testing.T) {
 	assert.NotNil(t, cmd.Flags().Lookup("template"))
 }
 
+func TestValidateParentIDAndType(t *testing.T) {
+	assert.NoError(t, validateParentIDAndType("", ""))
+	assert.NoError(t, validateParentIDAndType("id", "SPACE"))
+
+	assert.Error(t, validateParentIDAndType("", "SPACE"))
+	assert.Error(t, validateParentIDAndType("id", ""))
+}
+
 func TestNewCmdList_ParentTypeValidation(t *testing.T) {
 	cases := []struct {
 		parentType string
