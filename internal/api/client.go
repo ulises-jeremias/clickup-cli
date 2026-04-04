@@ -104,3 +104,22 @@ func (c *Client) Token() string {
 func (c *Client) DoRequest(req *http.Request) (*http.Response, error) {
 	return c.HTTPClient.Do(req)
 }
+
+// APIV3BaseURL returns the root URL for ClickUp API v3 (trailing slash).
+func (c *Client) APIV3BaseURL() string {
+	u := c.Clickup.BaseURL
+	if u == nil {
+		return "https://api.clickup.com/api/v3/"
+	}
+	v3 := *u
+	path := strings.TrimSuffix(v3.Path, "/")
+	if strings.HasSuffix(path, "/v2") {
+		path = strings.TrimSuffix(path, "/v2") + "/v3"
+	} else {
+		return "https://api.clickup.com/api/v3/"
+	}
+	v3.Path = path + "/"
+	v3.RawQuery = ""
+	v3.Fragment = ""
+	return v3.String()
+}

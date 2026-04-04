@@ -34,15 +34,9 @@ func (e *AuthExpiredError) Error() string {
 	return "authentication expired or revoked. Run 'clickup auth login' to re-authenticate"
 }
 
-// HandleErrorResponse checks an HTTP response for errors and returns a user-friendly error.
-func HandleErrorResponse(resp *http.Response) error {
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		return nil
-	}
-
-	body, _ := io.ReadAll(resp.Body)
-
-	apiErr := &APIError{StatusCode: resp.StatusCode}
+// APIErrorFromResponseBody builds a user-facing APIError from an HTTP status and raw JSON body.
+func APIErrorFromResponseBody(statusCode int, body []byte) error {
+	apiErr := &APIError{StatusCode: statusCode}
 
 	var errorBody struct {
 		Err     string `json:"err"`
@@ -54,7 +48,7 @@ func HandleErrorResponse(resp *http.Response) error {
 		apiErr.Message = errorBody.Message
 	}
 
-	switch resp.StatusCode {
+	switch statusCode {
 	case 401:
 		apiErr.Message = "Authentication failed. Run 'clickup auth login' to re-authenticate."
 	case 403:
@@ -72,4 +66,14 @@ func HandleErrorResponse(resp *http.Response) error {
 	}
 
 	return apiErr
+}
+
+// HandleErrorResponse checks an HTTP response for errors and returns a user-friendly error.
+func HandleErrorResponse(resp *http.Response) error {
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return nil
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	return APIErrorFromResponseBody(resp.StatusCode, body)
 }

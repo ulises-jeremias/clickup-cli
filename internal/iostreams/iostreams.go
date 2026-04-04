@@ -3,6 +3,7 @@ package iostreams
 import (
 	"io"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
@@ -37,6 +38,23 @@ func Test() *IOStreams {
 		In:           io.NopCloser(nil),
 		Out:          io.Discard,
 		ErrOut:       io.Discard,
+		colorEnabled: false,
+		isTerminal:   false,
+	}
+}
+
+// TestWithWriters returns IOStreams that write to the given writers (no TTY, no color).
+func TestWithWriters(out, errOut io.Writer) *IOStreams {
+	if out == nil {
+		out = io.Discard
+	}
+	if errOut == nil {
+		errOut = io.Discard
+	}
+	return &IOStreams{
+		In:           io.NopCloser(strings.NewReader("")),
+		Out:          out,
+		ErrOut:       errOut,
 		colorEnabled: false,
 		isTerminal:   false,
 	}
